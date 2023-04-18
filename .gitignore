@@ -13,7 +13,7 @@ coverage/
 *.log
 *.iml
 # Compiled files
-*.js
+#*.js
 *.d.ts
 *.js.map
 # Typescript

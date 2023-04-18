@@ -9,7 +9,7 @@ body {
   /* Encabezado */
   .neon-border {
   font-size: 50px;
-  color: #24778b;
+  color: #c4d9df;
   text-align: center;
   text-shadow: 0 0 10px #00ccff, 0 0 20px #00ccff, 0 0 30px #00ccff, 0 0 40px #00ccff, 0 0 70px #00ccff, 0 0 80px #00ccff, 0 0 100px #00ccff, 0 0 150px #00ccff;
   }
@@ -63,6 +63,7 @@ body {
   table td {
   padding: 10px;
   text-align: left;
+  background-color: #454546;
   border-bottom: 1px solid #ddd;
   }
   
@@ -79,7 +80,7 @@ body {
   }
   
   table tr:hover {
-  background-color: #444444;
+  background-color: #d1bcbc;
   }
   /*Modal Styles*/
 .modal {

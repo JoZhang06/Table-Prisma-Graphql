@@ -1,0 +1,51 @@
+//Funcion para Crear el usuario
+const openModalButton = document.getElementById("add_user");
+const modal = document.getElementById('modal_add');
+const cancelButton = document.getElementById('cancel-button');
+
+openModalButton.addEventListener('click', () => {
+    modal.style.display = 'block';
+    modal.appendChild(closeModalButton);
+});
+
+cancelButton.addEventListener('click', () => {
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    nameInput.value = '';
+    emailInput.value = '';
+    modal.style.display = 'none'; // cerrar el modal
+});
+
+
+const addUserForm = document.getElementById("add_user_form");
+addUserForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    const nameInput = document.getElementById("name");
+    const emailInput = document.getElementById("email");
+    const name = nameInput.value;
+    const email = emailInput.value;
+
+    fetch("http://localhost:4000/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            query: `mutation {
+    createUser(name: "${name}", email: "${email}") {
+      id
+      name
+      email
+      createdAt
+      updatedAt
+    }
+  }`,
+        }),
+    })
+        .then((res) => res.json())
+        .then((res) => {
+            console.log(res);
+            nameInput.value = "";
+            emailInput.value = "";
+            modal.style.display = 'none';
+        })
+        .catch((err) => console.error(err));
+});

@@ -1,65 +1,175 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tabla de usuarios</title>
-  </head>
-  <body>
-    <h1>Usuarios</h1>
 
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Nombre</th>
-          <th>Email</th>
-          <th>Creado</th>
-          <th>Actualizado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="users-table-body"></tbody>
-    </table>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Table</title>
+  <link href="style.css" rel="stylesheet">
 
-    <form id="add-user-form">
-      <input type="text" name="name" placeholder="Nombre" />
-      <input type="email" name="email" placeholder="Email" />
-      <button type="submit">Agregar usuario</button>
-    </form>
+</head>
 
-    <script>
-      // Función para mostrar el formulario de edición con los datos del usuario seleccionado
-      function showEditForm(id, name, email) {
-  // obtiene el formulario y los campos de entrada
-  const form = document.getElementById("edit-user-form");
-  const idField = document.getElementById("edit-user-id");
-  const nameField = document.getElementById("edit-user-name");
-  const emailField = document.getElementById("edit-user-email");
+<body>
+  <div>
+    <br>
+    <br>
+  </div>
 
-  // verifica si el formulario existe
-  if (form) {
-    // establece los valores de los campos de entrada
-    idField.value = id;
-    nameField.value = name;
-    emailField.value = email;
+  <form id="add-user-form">
+    <input type="text" name="name" placeholder="Name" />
+    <input type="email" name="email" placeholder="Email" />
+    <button type="submit">Add user</button>
+  </form>
+  <br>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="users-table-body"></tbody>
+  </table>
+  <script>
+    // Obtiene los datos del servidor GraphQL y los agrega a la tabla
+    fetch("http://localhost:4000/graphql", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: "{ users { id name email createdAt updatedAt } }",
+      }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        const users = res.data.users;
+        const tableBody = document.getElementById("users-table-body");
 
-    // muestra el formulario
-    form.style.display = "block";
-  } else {
-    console.error("El formulario de edición de usuario no se encontró en el DOM.");
-  }
-}
+        users.forEach((user) => {
+          const row = document.createElement("tr");
+          row.id = `user-${user.id}`;
+          row.innerHTML = `
+        <td>${user.id}</td>
+        <td>${user.name}</td>
+        <td>${user.email}</td>
+        <td>${new Date(parseInt(user.createdAt)).toLocaleString()}</td>
+        <td>${new Date(parseInt(user.updatedAt)).toLocaleString()}</td>
+        <td>
+          <button onclick="showEditForm(${user.id}, '${user.name}', '${user.email}')">Edit</button>
+          <button onclick="deleteUser(${user.id})">Delete</button>
+        </td>
+      `;
+          tableBody.appendChild(row);
+        });
+      })
+      .catch((err) => console.error(err));
 
+  </script>
 
-      // Función para actualizar un usuario
-      function updateUser(id, name, email) {
+  <script>
+    // Función para mostrar el formulario de edición de usuario
+    function showEditForm(id, name, email) {
+      const modal = document.createElement("div");
+      modal.classList.add("modal");
+
+      const form = document.createElement("form");
+      form.innerHTML = `
+    <label for="name">Nombre:</label>
+    <input type="text" name="name" value="${name}" required>
+    <label for="email">Correo electrónico:</label>
+    <input type="email" name="email" value="${email}" required>
+    <button type="submit">Guardar</button>
+  `;
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const nameInput = form.querySelector("[name='name']");
+        const emailInput = form.querySelector("[name='email']");
+        const newName = nameInput.value;
+        const newEmail = emailInput.value;
+        editUser(id, newName, newEmail);
+        modal.remove();
+      });
+
+      modal.appendChild(form);
+      document.body.appendChild(modal);
+    }
+
+    // Función para editar un usuario
+    function editUser(id, name, email) {
+      fetch("http://localhost:4000/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `mutation {
+        updateUser(id: ${id}, name: "${name}", email: "${email}") {
+          id
+          name
+          email
+          updatedAt
+        }
+      }`,
+        }),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          const user = res.data.updateUser;
+          const row = document.getElementById(`user-${user.id}`);
+          row.innerHTML = `
+        <td>${user.id}</td>
+        <td>${user.name}</td>
+        <td>${user.email}</td>
+        <td>${new Date(parseInt(user.createdAt)).toLocaleString()}</td>
+        <td>${new Date(parseInt(user.updatedAt)).toLocaleString()}</td>
+        <td>
+          <button onclick="showEditForm(${user.id}, '${user.name}', '${user.email}')">Editar</button>
+          <button onclick="deleteUser(${user.id})">Eliminar</button>
+        </td>
+      `;
+        })
+        .catch((err) => console.error(err));
+    }
+
+    // Función para eliminar un usuario
+    function deleteUser(id) {
+      fetch("http://localhost:4000/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `mutation {
+          deleteUser(id: ${id}) {
+            id
+          }
+        }`,
+        }),
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          const user = res.data.deleteUser;
+          const row = document.getElementById(`user-${user.id}`);
+          row.remove();
+        })
+        .catch((err) => console.error(err));
+    }
+    //Funcion para Crear el usuario
+    document.addEventListener("DOMContentLoaded", function () {
+      const addUserForm = document.getElementById("add-user-form");
+
+      addUserForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        const nameInput = document.getElementsByName("name")[0];
+        const emailInput = document.getElementsByName("email")[0];
+        const name = nameInput.value;
+        const email = emailInput.value;
+
         fetch("http://localhost:4000/graphql", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             query: `mutation {
-          updateUser(id: ${id}, name: "${name}", email: "${email}") {
+          createUser(name: "${name}", email: "${email}") {
             id
             name
             email
@@ -71,77 +181,11 @@
         })
           .then((res) => res.json())
           .then((res) => {
-            const user = res.data.updateUser;
-            const row = document.getElementById(`user-${user.id}`);
-            row.innerHTML = `
-          <td>${user.id}</td>
-          <td>${user.name}</td>
-          <td>${user.email}</td>
-          <td>${new Date(parseInt(user.createdAt)).toLocaleString()}</td>
-          <td>${new Date(parseInt(user.updatedAt)).toLocaleString()}</td>
-          <td>
-            <button onclick="showEditForm(${user.id}, '${user.name}', '${
-              user.email
-            }')">Editar</button>
-            <button onclick="deleteUser(${user.id})">Eliminar</button>
-          </td>
-        `;
+            console.log(res);
+            nameInput.value = "";
+            emailInput.value = "";
           })
           .catch((err) => console.error(err));
-      }
-
-      // Función para eliminar un usuario
-      function deleteUser(id) {
-        fetch("http://localhost:4000/graphql", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            query: `mutation {
-          deleteUser(id: ${id}) {
-            id
-          }
-        }`,
-          }),
-        })
-          .then((res) => res.json())
-          .then((res) => {
-            const user = res.data.deleteUser;
-            const row = document.getElementById(`user-${user.id}`);
-            row.remove();
-          })
-          .catch((err) => console.error(err));
-      }
-
-      // Obtiene los datos del servidor GraphQL y los agrega a la tabla
-fetch("http://localhost:4000/graphql", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    query: "{ users { id name email createdAt updatedAt } }",
-  }),
-})
-  .then((res) => res.json())
-  .then((res) => {
-    const users = res.data.users;
-    const tableBody = document.getElementById("users-table-body");
-
-    users.forEach((user) => {
-      const row = document.createElement("tr");
-      row.id = `user-${user.id}`;
-      row.innerHTML = `
-        <td>${user.id}</td>
-        <td>${user.name}</td>
-        <td>${user.email}</td>
-        <td>${new Date(parseInt(user.createdAt)).toLocaleString()}</td>
-        <td>${new Date(parseInt(user.updatedAt)).toLocaleString()}</td>
-        <td>
-          <button onclick="showEditForm(${user.id}, '${user.name}', '${user.email}')">Editar</button>
-          <button onclick="deleteUser(${user.id})">Eliminar</button>
-        </td>
-      `;
-      tableBody.appendChild(row);
+      });
     });
-  })
-  .catch((err) => console.error(err));
-
   </script>

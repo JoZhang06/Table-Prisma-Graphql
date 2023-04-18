@@ -1,7 +1,7 @@
 {
   "name": "typescript_graphql",
   "version": "1.0.0",
-  "description": "",
+  "description": "Creating an html page with prisma and graphql using typescript",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
